@@ -26,7 +26,7 @@ class UploadHelper extends AppHelper {
 		return $this->Html->link($title, $this->url($data, $field, $urlOptions), $htmlOptions);
 	}
 
-	public function url($data, $field, $options = array()) {
+	public function url($data = null , $field = false, $options = array()) {
 		$options += array('style' => 'original', 'urlize' => true);
 		list($model, $field) = explode('.', $field);
 		if(is_array($data)) {
