@@ -29,7 +29,7 @@ class UploadBehavior extends ModelBehavior {
      * Called when the behavior is attached to a model. 
      * Settings come from the attached model’s $actsAs property.
      */
-    public function setup(Model $Model, array $settings = array()) {
+    public function setup(Model $Model,  $settings = array()) {
         $defaults = array(
             'path'             => ':webroot/uploads/:model/:id/:style-:filename:extension',
             'styles'           => array(),
@@ -68,15 +68,19 @@ class UploadBehavior extends ModelBehavior {
      */
     public function beforeSave(Model $Model) {
         $this->reset();
+
         foreach ($this->settings[$Model->name] as $field => $settings) {
             if (!empty($Model->data[$Model->name][$field]) 
                 && is_array($Model->data[$Model->name][$field]) 
                 && file_exists($Model->data[$Model->name][$field]['tmp_name'])
             ) {
+
                 if (!empty($Model->id)) {
                     $this->prepareToDeleteFiles($Model, $field, true);
                 }
                 $this->prepareToWriteFiles($Model, $field);
+            }else{
+            	unset($Model->data[$Model->name][$field]);
             }
         }
         return true;
@@ -99,7 +103,7 @@ class UploadBehavior extends ModelBehavior {
      * 
      * Prepares the files to be deleted
      */
-    public function beforeDelete(Model $Model) {
+    public function beforeDelete(Model $Model,$cascade = true) {
         $this->reset();
         $this->prepareToDeleteFiles($Model);
         return true;
@@ -124,7 +128,6 @@ class UploadBehavior extends ModelBehavior {
         foreach ($this->settings[$Model->name] as $field => $settings) {
             if (isset($Model->data[$Model->name][$field])) {
                 $data = $Model->data[$Model->name][$field];
-
                 if ((empty($data) || is_array($data) 
                     && empty($data['tmp_name'])) 
                     && !empty($settings['urlField']) 
@@ -300,7 +303,7 @@ class UploadBehavior extends ModelBehavior {
         foreach ($this->settings[$Model->name] as $field => $settings) {
             if (!empty($this->toDelete[$field])) {
                 $styles  = array('original');
-                $styles += array_keys($settings['styles']);
+                $styles = array_merge($styles, array_keys($settings['styles']));
                 foreach ($styles as $style) {
                     $settings = $this->interpolate($Model, $field, $this->toDelete[$field], $style);
                     if (file_exists($settings['path'])) {
@@ -656,6 +659,9 @@ class UploadBehavior extends ModelBehavior {
      */
     protected function validateImageDimensions($file, $type, $value) {
         $file = array_shift($file);
+        if (empty($file['tmp_name'])){
+        	return false;
+        }
         $dimensions = getimagesize($file['tmp_name']);
         if(!$dimensions) {
             return false;
