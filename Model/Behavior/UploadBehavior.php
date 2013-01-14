@@ -69,10 +69,10 @@ class UploadBehavior extends ModelBehavior {
     public function beforeSave(Model $Model) {
         $this->reset();
 
-        foreach ($this->settings[$Model->name] as $field => $settings) {
-            if (!empty($Model->data[$Model->name][$field]) 
-                && is_array($Model->data[$Model->name][$field]) 
-                && file_exists($Model->data[$Model->name][$field]['tmp_name'])
+        foreach ($this->settings[$Model->alias] as $field => $settings) {
+            if (!empty($Model->data[$Model->alias][$field]) 
+                && is_array($Model->data[$Model->alias][$field]) 
+                && file_exists($Model->data[$Model->alias][$field]['tmp_name'])
             ) {
 
                 if (!empty($Model->id)) {
@@ -80,7 +80,7 @@ class UploadBehavior extends ModelBehavior {
                 }
                 $this->prepareToWriteFiles($Model, $field);
             }else{
-            	unset($Model->data[$Model->name][$field]);
+            	unset($Model->data[$Model->alias][$field]);
             }
         }
         return true;
@@ -125,19 +125,19 @@ class UploadBehavior extends ModelBehavior {
      * If the data is a string the it tries to fetch the image from a url
      */
     public function beforeValidate(Model $Model) {
-        foreach ($this->settings[$Model->name] as $field => $settings) {
-            if (isset($Model->data[$Model->name][$field])) {
-                $data = $Model->data[$Model->name][$field];
+        foreach ($this->settings[$Model->alias] as $field => $settings) {
+            if (isset($Model->data[$Model->alias][$field])) {
+                $data = $Model->data[$Model->alias][$field];
                 if ((empty($data) || is_array($data) 
                     && empty($data['tmp_name'])) 
                     && !empty($settings['urlField']) 
-                    && !empty($Model->data[$Model->name][$settings['urlField']])
+                    && !empty($Model->data[$Model->alias][$settings['urlField']])
                 ) {
-                    $data = $Model->data[$Model->name][$settings['urlField']];
+                    $data = $Model->data[$Model->alias][$settings['urlField']];
                 }
 
                 if (is_string($data)) {
-                    $Model->data[$Model->name][$field] = $this->fetchFromUrl($data);
+                    $Model->data[$Model->alias][$field] = $this->fetchFromUrl($data);
                 }
             }
         }
@@ -193,7 +193,7 @@ class UploadBehavior extends ModelBehavior {
 
         $this->toWrite[$field] = $Model->data[$Model->alias][$field];
 
-        unset($Model->data[$Model->name][$field]);
+        unset($Model->data[$Model->alias][$field]);
 
         $settings = $this->settings[$Model->alias][$field];
         $Model->data[$Model->alias][$field] = $this->toWrite[$field]['name'];
@@ -300,7 +300,7 @@ class UploadBehavior extends ModelBehavior {
      * Deletes files
      */
     protected function deleteFiles(Model $Model) {
-        foreach ($this->settings[$Model->name] as $field => $settings) {
+        foreach ($this->settings[$Model->alias] as $field => $settings) {
             if (!empty($this->toDelete[$field])) {
                 $styles  = array('original');
                 $styles = array_merge($styles, array_keys($settings['styles']));
@@ -628,7 +628,7 @@ class UploadBehavior extends ModelBehavior {
     public function maxWidth(Model $Model, $file, $maxWidth) {
         $keys = array_keys($file);
         $field = $keys[0];
-        $settings = $this->settings[$Model->name][$field];
+        $settings = $this->settings[$Model->alias][$field];
         if($settings['resizeToMaxWidth'] && !$this->validateImageDimensions($file, 'maxWidth', $maxWidth)) {
             $this->maxWidthSize = $maxWidth;
             return true;
