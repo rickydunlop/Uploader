@@ -100,7 +100,7 @@ It also accepts regular expressions if you wrap the content with an opening and 
 ```php
 public $validate = array(
 	'image' => array(
-		'contentType => array(
+		'contentType' => array(
 			'rule' => array('contentType', array(
 				'image/jpg', 'image/jpeg', 'image/png', 'image/gif'
 			)),
