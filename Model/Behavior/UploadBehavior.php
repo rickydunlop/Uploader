@@ -5,7 +5,7 @@ App::uses('Interpolation', 'Uploader.Lib');
 /**
  * UploadBehavior
  *
- * UploadBehavior does all the job of saving files to disk while saving records to database. 
+ * UploadBehavior does all the job of saving files to disk while saving records to database.
  * For more info read UploadPack documentation.
  *
  * @author Michał Szajbe (michal.szajbe@gmail.com)
@@ -25,8 +25,8 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Setup callback
-     * 
-     * Called when the behavior is attached to a model. 
+     *
+     * Called when the behavior is attached to a model.
      * Settings come from the attached model’s $actsAs property.
      */
     public function setup(Model $Model,  $settings = array()) {
@@ -62,7 +62,7 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * beforeSave callback
-     * 
+     *
      * Runs some checks to ensure the file has uploaded correctly.
      * Sets up the write/delete queues
      */
@@ -70,8 +70,8 @@ class UploadBehavior extends ModelBehavior {
         $this->reset();
 
         foreach ($this->settings[$Model->alias] as $field => $settings) {
-            if (!empty($Model->data[$Model->alias][$field]) 
-                && is_array($Model->data[$Model->alias][$field]) 
+            if (!empty($Model->data[$Model->alias][$field])
+                && is_array($Model->data[$Model->alias][$field])
                 && file_exists($Model->data[$Model->alias][$field]['tmp_name'])
             ) {
 
@@ -88,7 +88,7 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * afterSave callback
-     * 
+     *
      * Writes/deletes any files in the respective queues
      */
     public function afterSave(Model $Model, $created) {
@@ -100,7 +100,7 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * beforeDelete callback
-     * 
+     *
      * Prepares the files to be deleted
      */
     public function beforeDelete(Model $Model,$cascade = true) {
@@ -111,7 +111,7 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Aftersave callback
-     * 
+     *
      * Deletes any files
      */
     public function afterDelete(Model $Model) {
@@ -120,7 +120,7 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * beforeValidate callback
-     * 
+     *
      * If no file is uploaded it checks if the urlField has a value and uses it
      * If the data is a string the it tries to fetch the image from a url
      */
@@ -128,9 +128,9 @@ class UploadBehavior extends ModelBehavior {
         foreach ($this->settings[$Model->alias] as $field => $settings) {
             if (isset($Model->data[$Model->alias][$field])) {
                 $data = $Model->data[$Model->alias][$field];
-                if ((empty($data) || is_array($data) 
-                    && empty($data['tmp_name'])) 
-                    && !empty($settings['urlField']) 
+                if ((empty($data) || is_array($data)
+                    && empty($data['tmp_name']))
+                    && !empty($settings['urlField'])
                     && !empty($Model->data[$Model->alias][$settings['urlField']])
                 ) {
                     $data = $Model->data[$Model->alias][$settings['urlField']];
@@ -154,7 +154,7 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Fetches a file from a url
-     * 
+     *
      * @param string $url The url to be fetched
      * @return array $data Array in a similar format as a HTTP POST file upload
      */
@@ -178,10 +178,10 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Prepare files to be written
-     * 
+     *
      * Cleans the filename making it url friendly
      * If overwrite is true, it checks to see if the file exists
-     * 
+     *
      * @param array $field The file to be processed.
      */
     protected function prepareToWriteFiles(Model $Model, $field) {
@@ -203,9 +203,9 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Writes files to a location
-     * 
+     *
      * Takes care of resizing the files and also processing the different styles.
-     * 
+     *
      * @return array An array of fields it attempted to write.
      *               Each field value will be true if successfull.
      */
@@ -255,10 +255,10 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Sets up files for deletion
-     * 
+     *
      * Prepares a list of files to be deleted
      * If the value is not in the data array it reads it from the database
-     * 
+     *
      * @param string $field The field to delete, if not set it will be taken from the model settings
      * @param boolean $forceRead Forces a read of the database to get the filename
      */
@@ -281,8 +281,8 @@ class UploadBehavior extends ModelBehavior {
         }
         if ($needToRead) {
             $data = $Model->find('first', array(
-                'conditions' => array($Model->alias . '.' . $Model->primaryKey => $Model->id), 
-                'fields' => $fields, 
+                'conditions' => array($Model->alias . '.' . $Model->primaryKey => $Model->id),
+                'fields' => $fields,
                 'callbacks' => false
             ));
         } else {
@@ -306,8 +306,12 @@ class UploadBehavior extends ModelBehavior {
                 $styles = array_merge($styles, array_keys($settings['styles']));
                 foreach ($styles as $style) {
                     $settings = $this->interpolate($Model, $field, $this->toDelete[$field], $style);
-                    if (file_exists($settings['path'])) {
-                        unlink($settings['path']);
+                    $dir = dirname($settings['path']);
+                    if (file_exists($settings['path']) && unlink($settings['path'])) {
+                        $files = @scandir($dir);
+                        if ($files && count($files) === 2) {
+                            rmdir($dir);
+                        }
                     }
                 }
             }
@@ -340,13 +344,13 @@ class UploadBehavior extends ModelBehavior {
             }
         }
         $class = 'Imagine\\' . $engine . '\Imagine';
-        return new $class();   
+        return new $class();
     }
 
     /**
      * Resizes an image
-     * 
-     * @param array $options 
+     *
+     * @param array $options
      *              - `source` - the source file
      *              - `destination` - The destination of the final image
      *              - `geometry` - The resize dimensions
@@ -406,7 +410,7 @@ class UploadBehavior extends ModelBehavior {
     /**
      * Checks to see if a directory exists and is writable
      * It then tries to create the directory
-     * 
+     *
      * @param string $dir The directory to check
      * @return boolean true if successful
      */
@@ -424,7 +428,7 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Makes a filename URL friendly by using Inflector::slug
-     * 
+     *
      * @param string $filename The filename to clean
      * @return string The clean filename
      */
@@ -434,7 +438,7 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Checks that the attachment is within the allowed filesize
-     * 
+     *
      * @param object $Model Model.
      * @param array $file The uploaded file
      * @param array $limits The allowed size in bytes. Keyed array containing min and max keys.
@@ -464,7 +468,7 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Parses a string and returns the size in bytes
-     * 
+     *
      * Pass something like 1MB or 100KB to get the value in bytes
      *
      * @param string $string
@@ -494,13 +498,13 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Checks that the content type of the uploaded file is allowed
-     * 
-     * Uses finfo to check the mime type of the file, if finfo is unavailable it 
-     * uses the uploaded files `type` 
+     *
+     * Uses finfo to check the mime type of the file, if finfo is unavailable it
+     * uses the uploaded files `type`
      *
      * @param object $Model Model.
      * @param array $value The uploaded file
-     * @param array $contentTypes Array of mime types allowed. Can be a mimetype or a regular expression 
+     * @param array $contentTypes Array of mime types allowed. Can be a mimetype or a regular expression
      *        e.g array('image/jpg', '/^video\/.+/')
      * @return boolean true if content type is allowed.
      */
@@ -534,10 +538,10 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Checks that a file upload is present.
-     * 
+     *
      * If the record exists and no upload is found then the current value of the record is
      * added to the data array.
-     * 
+     *
      * @param object $Model Model.
      * @param array $file The uploaded file to be validated.
      * @return boolean true if a file is detected.
@@ -567,7 +571,7 @@ class UploadBehavior extends ModelBehavior {
     /**
      * Exact width validation
      * Checks that an image is exactly the specified width
-     * 
+     *
      * @param object $Model Model.
      * @param array $file The uploaded file to be validated.
      * @param string $width Width.
@@ -580,7 +584,7 @@ class UploadBehavior extends ModelBehavior {
     /**
      * Exact height validation
      * Checks that an image is exactly the specified height
-     * 
+     *
      * @param object $Model Model.
      * @param array $file The uploaded file to be validated.
      * @param string $height Height.
@@ -593,7 +597,7 @@ class UploadBehavior extends ModelBehavior {
     /**
      * Min width validation
      * Checks that an image is not smaller than the min width
-     * 
+     *
      * @param object $Model Model.
      * @param array $file The uploaded file to be validated.
      * @param string $minWidth Min width allowed.
@@ -606,7 +610,7 @@ class UploadBehavior extends ModelBehavior {
     /**
      * Min height validation
      * Checks that an image is not smaller than the min height
-     * 
+     *
      * @param object $Model Model.
      * @param array $file The uploaded file to be validated.
      * @param string $minHeight Min height allowed.
@@ -619,7 +623,7 @@ class UploadBehavior extends ModelBehavior {
     /**
      * Max width validation
      * Checks that an image is not wider than the max width
-     * 
+     *
      * @param object $Model Model.
      * @param array $value The uploaded file to be validated.
      * @param string $maxWidth Max width allowed.
@@ -639,7 +643,7 @@ class UploadBehavior extends ModelBehavior {
     /**
      * Max height validation
      * Checks that an image is not taller than the max height
-     * 
+     *
      * @param object $Model Model.
      * @param array $file The uploaded file to be validated.
      * @param string $maxHeight Max height allowed.
@@ -651,7 +655,7 @@ class UploadBehavior extends ModelBehavior {
 
     /**
      * Helper method to validate various dimensions of images
-     * 
+     *
      * @param array $file File to be validated
      * @param string $type Allowed values: width, height, minHeight, maxHeight, minWidth, maxWidth
      * @param int $value Width or height value to compare against.
@@ -670,7 +674,7 @@ class UploadBehavior extends ModelBehavior {
 
         switch($type) {
             case 'exactWidth':
-                return ($width == $value); 
+                return ($width == $value);
                 break;
             case 'exactHeight':
                 return ($height == $value);
